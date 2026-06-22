@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Elite Pools SCP Order App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #eaf6ff;
+      color: #0f172a;
+    }
+
+    .app {
+      max-width: 900px;
+      margin: auto;
+      padding: 16px;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0369a1, #0284c7);
+      color: white;
+      padding: 20px;
+      border-radius: 18px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    .top-bar {
+      position: sticky;
+      top: 0;
+      background: #eaf6ff;
+      padding: 10px 0;
+      z-index: 5;
+    }
+
+    .count {
+      background: #075985;
+      color: white;
+      padding: 10px;
+      border-radius: 999px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 13px;
+      border-radius: 12px;
+      border: 1px solid #93c5fd;
+      font-size: 16px;
+      margin-bottom: 8px;
+      box-sizing: border-box;
+    }
+
+    .section-title {
+      background: #bae6fd;
+      color: #075985;
+      padding: 10px;
+      border-radius: 10px;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 16px;
+      border: 1px solid #7dd3fc;
+    }
+
+    .item {
+      background: white;
+      border: 1px solid #cfe8f8;
+      border-radius: 14px;
+      padding: 14px;
+      margin: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .item.added {
+      border-left: 6px solid #0284c7;
+      background: #f0f9ff;
+    }
+
+    .item-name {
+      font-weight: bold;
+    }
+
+    .part {
+      color: #475569;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #0369a1;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .complete {
+      width: 100%;
+      background: #0284c7;
+      margin-top: 10px;
+      font-size: 17px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .65);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 20;
+    }
+
+    .modal-box {
+      background: white;
+      padding: 20px;
+      border-radius: 18px;
+      max-width: 460px;
+      width: 100%;
+      max-height: 92vh;
+      overflow: auto;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      margin-bottom: 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #93c5fd;
+      box-sizing: border-box;
+    }
+
+    #quantityInput {
+      text-align: center;
+      font-size: 34px;
+      font-weight: bold;
+      background: #f0f9ff;
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .keypad button {
+      font-size: 24px;
+      padding: 18px;
+      background: #e0f2fe;
+      color: #075985;
+      border: 1px solid #7dd3fc;
+    }
+
+    .keypad .clear {
+      background: #fee2e2;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+
+    textarea {
+      min-height: 230px;
+      font-family: Arial, sans-serif;
+    }
+
+    .cancel {
+      background: #64748b;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .add {
+      background: #0284c7;
+      width: 100%;
+    }
+
+    .danger {
+      background: #b91c1c;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .order-row {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .remove-small {
+      background: #b91c1c;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    @media(max-width: 600px) {
+      .item, .order-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <h1>Elite Pools SCP Order Builder App</h1>
+      <p>Walk the list, tap what you need, enter quantity, complete order.</p>
+    </header>
+
+    <div class="top-bar">
+      <div class="count"><span id="orderCount">0</span> item(s) added</div>
+      <input type="text" id="searchInput" placeholder="Search item or part number...">
+      <button class="complete" onclick="completeOrder()">Complete Order</button>
+    </div>
+
+    <div id="inventory"></div>
+
+    <button class="complete" onclick="completeOrder()">Complete Order</button>
+  </div>
+
+  <div class="modal" id="quantityModal">
+    <div class="modal-box">
+      <h2 id="modalItemName"></h2>
+      <p id="modalPartNumber"></p>
+
+      <label>Quantity to order</label>
+      <input type="text" id="quantityInput" readonly placeholder="0">
+
+      <div class="keypad">
+        <button onclick="pressNumber('1')">1</button>
+        <button onclick="pressNumber('2')">2</button>
+        <button onclick="pressNumber('3')">3</button>
+        <button onclick="pressNumber('4')">4</button>
+        <button onclick="pressNumber('5')">5</button>
+        <button onclick="pressNumber('6')">6</button>
+        <button onclick="pressNumber('7')">7</button>
+        <button onclick="pressNumber('8')">8</button>
+        <button onclick="pressNumber('9')">9</button>
+        <button class="clear" onclick="clearQuantity()">Clear</button>
+        <button onclick="pressNumber('0')">0</button>
+        <button class="clear" onclick="backspaceQuantity()">⌫</button>
+      </div>
+
+      <label>Order Unit</label>
+      <select id="unitInput">
+        <option value="each">each</option>
+        <option value="box">box</option>
+        <option value="boxes">boxes</option>
+        <option value="pallet">pallet</option>
+        <option value="pallets">pallets</option>
+        <option value="roll">roll</option>
+        <option value="rolls">rolls</option>
+        <option value="bundle">bundle</option>
+        <option value="bundles">bundles</option>
+        <option value="case">case</option>
+        <option value="cases">cases</option>
+        <option value="full box">full box</option>
+        <option value="full shelf">full shelf</option>
+      </select>
+
+      <label>Notes optional</label>
+      <input type="text" id="noteInput" placeholder="Example: urgent, confirm stock, etc.">
+
+      <button class="add" onclick="addToOrder()">Add to Order</button>
+      <button class="cancel" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="modal" id="emailModal">
+    <div class="modal-box">
+      <h2>Order List</h2>
+
+      <div id="orderPreview"></div>
+
+      <textarea id="emailOutput"></textarea>
+
+      <button class="add" onclick="copyEmail()">Copy List</button>
+      <button class="danger" onclick="clearOrder()">Clear Current Order</button>
+      <button class="cancel" onclick="closeEmailModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const items = [
+      { section: "Warehouse", name: "200 SQ FT CARTRIDGE FILTER", part: "CS200" },
+      { section: "Warehouse", name: "Flo-Pro 2.7 HP - 2 relays", part: "VSFHP270DV2A" },
+      { section: "Warehouse", name: "Flo-Pro 1.85 hp 2 relays/aux", part: "VSFHP185DV2A" },
+      { section: "Warehouse", name: "Jandy Aqualink PDA Bundle Kit", part: "PDAP4SWC" },
+      { section: "Warehouse", name: "Electric Heat/Chill Pump", part: "JRT3000R" },
+      { section: "Warehouse", name: "Jandy Natural Gas Heater", part: "JXiQ260NK" },
+      { section: "Warehouse", name: "Jandy Propane Heater", part: "JXiQ260PK" },
+      { section: "Warehouse", name: "100’ 24w LED lights", part: "JLU4C24W100" },
+      { section: "Warehouse", name: "150’ 24w LED lights", part: "JLU4C24W150" },
+      { section: "Warehouse", name: "100’ 12w LED lights", part: "JLU4C12W100" },
+      { section: "Warehouse", name: "150’ 12w LED lights", part: "JLU4C12W150" },
+      { section: "Warehouse", name: "TCLVSCG - TAB FEEDER", part: "JDY-45-1504" },
+      { section: "Warehouse", name: "JVA Valve Actuator", part: "JDY-30-6324" },
+      { section: "Warehouse", name: "AquaLink 3.0 Antenna Only", part: "IQ30-A" },
+      { section: "Warehouse", name: "AquaLink 3.0 Upgrade Kit", part: "IQ30-RS" },
+      { section: "Warehouse", name: "Jandy TruFit Bubbler (JHCBUB)", part: "JDY-27-0000" },
+      { section: "Warehouse", name: "TruFit Bubbler Vinyl and Fiberglass Kit (JHCBUB-V)", part: "JDY-27-0001" },
+      { section: "Warehouse", name: "Epic 8642 iQ Robotic Pool Cleaner with Caddy", part: "POL-20-1007" },
+      { section: "Warehouse", name: "Epic 8640 Robotic Pool Cleaner with Caddy", part: "POL-20-1006" },
+      { section: "Warehouse", name: "200 Sqft Jandy Cartridge Filter", part: "SPG-051-2529" },
+      { section: "Warehouse", name: "200 Sqft Pentair Cartridge Filter", part: "SPG-051-2535" },
+      { section: "Warehouse", name: "Pool Miser White Autofill Pool & Spa Water Leveler", part: "NOY-56-756" },
+      { section: "Warehouse", name: "GRAY 2\" DECK DRAINS", part: "STE-55-4508" },
+      { section: "Warehouse", name: "GRAY 3\" DECK DRAINS", part: "STE-55-3900" },
+      { section: "Warehouse", name: "44\" Stainless Steel Marine Grade Artisan Handrail Single", part: "SRS-35-9712" },
+      { section: "Warehouse", name: "36\" x 48\" x 3\" UltraLite® Equipment Pad", part: "DIV-37-3001" },
+
+      { section: "2\" Fittings", name: "Sweeps", part: "411-9130" },
+      { section: "2\" Fittings", name: "90's", part: "406-020BC" },
+      { section: "2\" Fittings", name: "45's", part: "417-020BC" },
+      { section: "2\" Fittings", name: "Tees", part: "401-020BC" },
+      { section: "2\" Fittings", name: "Coupling", part: "429-020BC" },
+      { section: "2\" Fittings", name: "Caps", part: "447-020BC" },
+
+      { section: "4\" Fittings", name: "90's", part: "406-040" },
+      { section: "4\" Fittings", name: "45's", part: "417-040" },
+      { section: "4\" Fittings", name: "Tee's", part: "401-040" },
+      { section: "4\" Fittings", name: "Couplings", part: "429-040" },
+
+      { section: "Fiberglass Returns", name: "1-1/2\" Socket x 2\" Spigot Gray Fiberglass Wall Fitting and Flush Eyeball", part: "CTM-251-9100" },
+      { section: "Fiberglass Returns", name: "1-1/2\" Socket x 2\" Spigot White Fiberglass Wall Fitting and Flush Eyeball", part: "CTM-251-9099" },
+
+      { section: "1 1/2\" Fittings", name: "90's", part: "406-015BC" },
+      { section: "1 1/2\" Fittings", name: "45's", part: "417-015BC" },
+      { section: "1 1/2\" Fittings", name: "Tees", part: "401-015BC" },
+      { section: "1 1/2\" Fittings", name: "Couplings", part: "429-015BC" },
+
+      { section: "Bushings", name: "4 x 3 bushing", part: "437-422" },
+      { section: "Bushings", name: "4 x 2 bushing", part: "437-420" },
+      { section: "Bushings", name: "3 x 2 bushing", part: "437-338" },
+      { section: "Bushings", name: "2 1/2 x 2 bushing", part: "437-292BC" },
+      { section: "Bushings", name: "2 x 1 1/2 bushing", part: "437-251BC" },
+      { section: "Bushings", name: "2 x 1 bushing", part: "438-249" },
+      { section: "Bushings", name: "2 x 1 bushing", part: "437-249 BC" },
+      { section: "Bushings", name: "1 1/2 x 1", part: "429-211" },
+
+      { section: "2 1/2\" Fittings", name: "90's", part: "406-025" },
+      { section: "2 1/2\" Fittings", name: "45's", part: "417-025" },
+      { section: "2 1/2\" Fittings", name: "Tee's", part: "401-025" },
+      { section: "2 1/2\" Fittings", name: "Couplings", part: "429-025" },
+      { section: "2 1/2\" Fittings", name: "Sweep 90'", part: "406-025SW" },
+      { section: "2 1/2\" Fittings", name: "Caps", part: "447-025" },
+
+      { section: "3\" Fittings", name: "90's", part: "406-030" },
+      { section: "3\" Fittings", name: "45's", part: "417-030" },
+      { section: "3\" Fittings", name: "Tee's", part: "401-030" },
+      { section: "3\" Fittings", name: "Couplings", part: "429-030" },
+
+      { section: "Valves", name: "3 WAY", part: "CTM-56-1042" },
+      { section: "Valves", name: "2 WAY", part: "CTM-56-1042" },
+      { section: "Valves", name: "Check Valves", part: "" },
+
+      { section: "Gunite Returns", name: "2\" FIP x 2\" Socket Gray Insider Wall Return", part: "CTM-25-2025" },
+      { section: "Gunite Returns", name: "1.5\" FPT x 2\" Socket White Gunite Wall Return Fitting", part: "SPG-25-0010" },
+
+      { section: "Handrail Parts", name: "Escutcheons", part: "PER-35-729" },
+      { section: "Handrail Parts", name: "Anchor Set", part: "PER-35-768" },
+
+      { section: "Skimmer Parts", name: "Circle Mounting Extension Ring Gray", part: "WWP-251-1904" },
+      { section: "Skimmer Parts", name: "Circle Mounting Extension Ring White", part: "WWP-251-6560" },
+      { section: "Skimmer Parts", name: "Circle Skimmer Lids Gray", part: "WWP-251-2099" },
+      { section: "Skimmer Parts", name: "Circle Skimmer Lids White", part: "WWP-251-2094" },
+      { section: "Skimmer Parts", name: "Circle Lid Mounting Ring Gray", part: "WWP-25-1531" },
+      { section: "Skimmer Parts", name: "Circle Lid Mounting Ring White", part: "WWP-251-2069" },
+      { section: "Skimmer Parts", name: "Square Lid Assembly Gray", part: "WWP-25-1954" },
+      { section: "Skimmer Parts", name: "Square Lid Assembly White", part: "WWP-25-1952" },
+
+      { section: "Misc.", name: "Backwash Hose 200'", part: "POP-40-3073" },
+      { section: "Misc.", name: "Telescopic Poles", part: "RAI-40-2110" },
+
+      { section: "Electrical", name: "TRANSFORMERS", part: "PX100" },
+      { section: "Electrical", name: "1\" NPT Water Bonding Fitting", part: "PB-2008" },
+
+      { section: "Conduit", name: "1\" bell end 90's", part: "LAS-57-1040" },
+
+      { section: "Misc.", name: "Gator Bond", part: "AAR-65-1071" },
+      { section: "Misc.", name: "White Adheasive", part: "NOV-60-210" },
+      { section: "Misc.", name: "Gray Grout", part: "NOV-60-213" },
+      { section: "Misc.", name: "White Grout", part: "NOV-60-212" },
+      { section: "Misc.", name: "Boss 801 Clear Silicone", part: "BOS-60-3000" },
+      { section: "Misc.", name: "PVC Pipe Blue Glue", part: "IPS-60-5250" },
+      { section: "Misc.", name: "Pool Brushes", part: "PSL-40-0170" },
+      { section: "Misc.", name: "Pool Nets", part: "PSL-40-0308" },
+      { section: "Misc.", name: "Pool Heavy Duty Nets", part: "PSL-40-2023" },
+      { section: "Misc.", name: "Pool Vacuums", part: "PSL-40-0955" },
+      { section: "Misc.", name: "Pool Backwash Hose 50'", part: "PSL-40-2109" },
+      { section: "Misc.", name: "Skimmer Baskets w/ Tower", part: "GVT-60-501" },
+
+      { section: "CONEX", name: "SKIMMERS - Round Lid Round Style 007", part: "Straight From River Pools" },
+      { section: "CONEX", name: "MURIATIC ACID", part: "AAA-50-8602" }
+    ];
+
+    let order = [];
+    let selectedItem = null;
+
+    function saveOrder() {
+      localStorage.setItem("eliteOrderAppCurrentOrder", JSON.stringify(order));
+    }
+
+    function loadOrder() {
+      const saved = localStorage.getItem("eliteOrderAppCurrentOrder");
+      if (saved) {
+        order = JSON.parse(saved);
+      }
+    }
+
+    function renderInventory() {
+      const inventory = document.getElementById("inventory");
+      const searchText = document.getElementById("searchInput").value.toLowerCase().trim();
+
+      inventory.innerHTML = "";
+      let currentSection = "";
+
+      items.forEach((item, index) => {
+        const searchableText = (item.section + " " + item.name + " " + item.part).toLowerCase();
+
+        if (searchText && !searchableText.includes(searchText)) {
+          return;
+        }
+
+        if (item.section !== currentSection) {
+          currentSection = item.section;
+          inventory.innerHTML += `<div class="section-title">${currentSection}</div>`;
+        }
+
+        const existing = order.find(o => o.index === index);
+
+        inventory.innerHTML += `
+          <div class="item ${existing ? "added" : ""}">
+            <div>
+              <div class="item-name">${item.name}</div>
+              <div class="part">Part #: ${item.part || "N/A"}</div>
+              ${existing ? `<div class="part"><strong>Added: ${existing.quantity} ${existing.unit}</strong></div>` : ""}
+            </div>
+            <button onclick="openModal(${index})">${existing ? "Edit" : "Add"}</button>
+          </div>
+        `;
+      });
+
+      updateOrderCount();
+    }
+
+    function updateOrderCount() {
+      document.getElementById("orderCount").innerText = order.length;
+    }
+
+    function openModal(index) {
+      selectedItem = { ...items[index], index };
+      const existing = order.find(o => o.index === index);
+
+      document.getElementById("modalItemName").innerText = selectedItem.name;
+      document.getElementById("modalPartNumber").innerText = "Part #: " + (selectedItem.part || "N/A");
+      document.getElementById("quantityInput").value = existing ? existing.quantity : "";
+      document.getElementById("unitInput").value = existing ? existing.unit : "each";
+      document.getElementById("noteInput").value = existing ? existing.note : "";
+
+      document.getElementById("quantityModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("quantityModal").style.display = "none";
+    }
+
+    function pressNumber(num) {
+      const input = document.getElementById("quantityInput");
+      input.value += num;
+    }
+
+    function clearQuantity() {
+      document.getElementById("quantityInput").value = "";
+    }
+
+    function backspaceQuantity() {
+      const input = document.getElementById("quantityInput");
+      input.value = input.value.slice(0, -1);
+    }
+
+    function addToOrder() {
+      const quantity = document.getElementById("quantityInput").value.trim();
+      const unit = document.getElementById("unitInput").value;
+      const note = document.getElementById("noteInput").value.trim();
+
+      if (!quantity || Number(quantity) <= 0) {
+        alert("Enter a quantity first.");
+        return;
+      }
+
+      const existingIndex = order.findIndex(o => o.index === selectedItem.index);
+
+      const orderItem = {
+        ...selectedItem,
+        quantity,
+        unit,
+        note
+      };
+
+      if (existingIndex >= 0) {
+        order[existingIndex] = orderItem;
+      } else {
+        order.push(orderItem);
+      }
+
+      order.sort((a, b) => a.index - b.index);
+
+      saveOrder();
+      closeModal();
+      renderInventory();
+    }
+
+    function buildOrderList() {
+      let list = "";
+
+      order.forEach(item => {
+        list += item.quantity + " " + item.unit + " - " + item.name;
+
+        if (item.part) {
+          list += " (" + item.part + ")";
+        }
+
+        if (item.note) {
+          list += " - " + item.note;
+        }
+
+        list += String.fromCharCode(10);
+      });
+
+      return list.trim();
+    }
+
+    function renderOrderPreview() {
+      const preview = document.getElementById("orderPreview");
+      preview.innerHTML = "";
+
+      order.forEach((item, orderIndex) => {
+        preview.innerHTML += `
+          <div class="order-row">
+            <div>
+              <strong>${item.quantity} ${item.unit} - ${item.name}</strong>
+              <div class="part">${item.part || "No part number"}</div>
+            </div>
+            <button class="remove-small" onclick="removeOrderItem(${orderIndex})">Remove</button>
+          </div>
+        `;
+      });
+    }
+
+    function completeOrder() {
+      if (order.length === 0) {
+        alert("You have not added anything to the order yet.");
+        return;
+      }
+
+      renderOrderPreview();
+      document.getElementById("emailOutput").value = buildOrderList();
+      document.getElementById("emailModal").style.display = "flex";
+    }
+
+    function closeEmailModal() {
+      document.getElementById("emailModal").style.display = "none";
+    }
+
+    function copyEmail() {
+      const text = document.getElementById("emailOutput");
+      text.select();
+      document.execCommand("copy");
+      alert("Copied.");
+    }
+
+    function removeOrderItem(orderIndex) {
+      order.splice(orderIndex, 1);
+      saveOrder();
+      renderInventory();
+
+      if (order.length === 0) {
+        closeEmailModal();
+        return;
+      }
+
+      renderOrderPreview();
+      document.getElementById("emailOutput").value = buildOrderList();
+    }
+
+    function clearOrder() {
+      const confirmClear = confirm("Clear the current order?");
+      if (!confirmClear) return;
+
+      order = [];
+      saveOrder();
+      closeEmailModal();
+      renderInventory();
+    }
+
+    document.getElementById("searchInput").addEventListener("input", renderInventory);
+
+    loadOrder();
+    renderInventory();
+  </script>
+</body>
+</html>
